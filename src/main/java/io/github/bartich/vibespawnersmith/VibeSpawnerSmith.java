@@ -1,23 +1,36 @@
 package io.github.bartich.vibespawnersmith;
 
-import org.slf4j.Logger;
-
-import com.mojang.logging.LogUtils;
-
+import io.github.bartich.vibespawnersmith.network.NetworkHandler;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.ModContainer;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.registries.DeferredItem;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
-// The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(VibeSpawnerSmith.MODID)
 public class VibeSpawnerSmith {
-    // Define mod id in a common place for everything to reference
     public static final String MODID = "vibespawnersmith";
-    // Directly reference a slf4j logger
-    public static final Logger LOGGER = LogUtils.getLogger();
 
-    // The constructor for the mod class is the first code that is run when your mod is loaded.
-    // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
-    public VibeSpawnerSmith(IEventBus modEventBus, ModContainer modContainer) {
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
+
+    public static final DeferredItem<Item> CRAP_TOOL = ITEMS.register("crap_imposed_by_developers",
+            () -> new DeveloperCrapItem(new Item.Properties().stacksTo(1)));
+
+    public VibeSpawnerSmith(IEventBus modEventBus) {
+        // Убедись, что этот вызов ровно ОДИН:
+        ITEMS.register(modEventBus);
+
+        modEventBus.addListener(this::addCreative);
+        modEventBus.addListener(NetworkHandler::register);
+
+        PresetManager.load();
+    }
+
+    private void addCreative(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES || event.getTabKey() == CreativeModeTabs.OP_BLOCKS) {
+            event.accept(CRAP_TOOL);
+        }
     }
 }

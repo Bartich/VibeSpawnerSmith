@@ -1,0 +1,16 @@
+{
+  "item.vibespawnersmith.crap_imposed_by_developers": "Дерьмо, навязанное разработчиками",
+  "gui.vibespawnersmith.title": "Кузница спавнеров (Vibe Spawner Smith)",
+  "gui.vibespawnersmith.add_mob": "+ Добавить моба",
+  "gui.vibespawnersmith.delete": "✕",
+  "gui.vibespawnersmith.weight": "Вес",
+  "gui.vibespawnersmith.nbt": "NBT (снаряжение/эффекты)",
+  "gui.vibespawnersmith.total_mobs": "Всего:",
+  "gui.vibespawnersmith.simultaneous": "Арена:",
+  "gui.vibespawnersmith.cooldown": "КД (сек):",
+  "gui.vibespawnersmith.ticks": "Тики:",
+  "gui.vibespawnersmith.loot_table": "Лут:",
+  "gui.vibespawnersmith.infinite_cd": "Одноразовый (вечный кулдаун)",
+  "gui.vibespawnersmith.apply": "§aСковать спавнер",
+  "gui.vibespawnersmith.cancel": "Отмена"
+}

@@ -1,0 +1,16 @@
+{
+  "item.vibespawnersmith.crap_imposed_by_developers": "Crap imposed by the developers",
+  "gui.vibespawnersmith.title": "Vibe Spawner Smith",
+  "gui.vibespawnersmith.add_mob": "+ Add Mob Entry",
+  "gui.vibespawnersmith.delete": "✕",
+  "gui.vibespawnersmith.weight": "Weight",
+  "gui.vibespawnersmith.nbt": "NBT (gear/effects)",
+  "gui.vibespawnersmith.total_mobs": "Total:",
+  "gui.vibespawnersmith.simultaneous": "Simult.:",
+  "gui.vibespawnersmith.cooldown": "CD (sec):",
+  "gui.vibespawnersmith.ticks": "Ticks:",
+  "gui.vibespawnersmith.loot_table": "Loot:",
+  "gui.vibespawnersmith.infinite_cd": "One-shot (infinite cooldown)",
+  "gui.vibespawnersmith.apply": "§aForge Spawner",
+  "gui.vibespawnersmith.cancel": "Cancel"
+}
