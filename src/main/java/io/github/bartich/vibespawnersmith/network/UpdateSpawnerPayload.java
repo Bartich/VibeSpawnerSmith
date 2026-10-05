@@ -25,23 +25,38 @@ public record UpdateSpawnerPayload(
     public record MobConfig(
             String entityId,
             int weight,
-            String mainhand,
-            String offhand,
-            String helmet,
-            String chestplate,
-            String leggings,
-            String boots,
-            String effects // Формат: "speed:1, strength:2"
+            String mainhand, float mainDropChance,
+            String offhand, float offDropChance,
+            String helmet, float helmDropChance,
+            String chestplate, float chestDropChance,
+            String leggings, float legsDropChance,
+            String boots, float bootsDropChance,
+            String customDrops,
+            String effects
     ) {
         public static void encode(ByteBuf buf, MobConfig mob) {
             ByteBufCodecs.STRING_UTF8.encode(buf, mob.entityId());
             ByteBufCodecs.VAR_INT.encode(buf, mob.weight());
+
             ByteBufCodecs.STRING_UTF8.encode(buf, mob.mainhand());
+            ByteBufCodecs.FLOAT.encode(buf, mob.mainDropChance());
+
             ByteBufCodecs.STRING_UTF8.encode(buf, mob.offhand());
+            ByteBufCodecs.FLOAT.encode(buf, mob.offDropChance());
+
             ByteBufCodecs.STRING_UTF8.encode(buf, mob.helmet());
+            ByteBufCodecs.FLOAT.encode(buf, mob.helmDropChance());
+
             ByteBufCodecs.STRING_UTF8.encode(buf, mob.chestplate());
+            ByteBufCodecs.FLOAT.encode(buf, mob.chestDropChance());
+
             ByteBufCodecs.STRING_UTF8.encode(buf, mob.leggings());
+            ByteBufCodecs.FLOAT.encode(buf, mob.legsDropChance());
+
             ByteBufCodecs.STRING_UTF8.encode(buf, mob.boots());
+            ByteBufCodecs.FLOAT.encode(buf, mob.bootsDropChance());
+
+            ByteBufCodecs.STRING_UTF8.encode(buf, mob.customDrops());
             ByteBufCodecs.STRING_UTF8.encode(buf, mob.effects());
         }
 
@@ -50,10 +65,17 @@ public record UpdateSpawnerPayload(
                     ByteBufCodecs.STRING_UTF8.decode(buf),
                     ByteBufCodecs.VAR_INT.decode(buf),
                     ByteBufCodecs.STRING_UTF8.decode(buf),
+                    ByteBufCodecs.FLOAT.decode(buf),
                     ByteBufCodecs.STRING_UTF8.decode(buf),
+                    ByteBufCodecs.FLOAT.decode(buf),
                     ByteBufCodecs.STRING_UTF8.decode(buf),
+                    ByteBufCodecs.FLOAT.decode(buf),
                     ByteBufCodecs.STRING_UTF8.decode(buf),
+                    ByteBufCodecs.FLOAT.decode(buf),
                     ByteBufCodecs.STRING_UTF8.decode(buf),
+                    ByteBufCodecs.FLOAT.decode(buf),
+                    ByteBufCodecs.STRING_UTF8.decode(buf),
+                    ByteBufCodecs.FLOAT.decode(buf),
                     ByteBufCodecs.STRING_UTF8.decode(buf),
                     ByteBufCodecs.STRING_UTF8.decode(buf)
             );

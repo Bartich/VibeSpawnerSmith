@@ -1,10 +1,15 @@
 package io.github.bartich.vibespawnersmith.network;
 
+import io.github.bartich.vibespawnersmith.VibeSpawnerSmith;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+
+import java.util.Locale;
 
 public class NetworkHandler {
     public static void register(RegisterPayloadHandlersEvent event) {
@@ -27,57 +32,26 @@ public class NetworkHandler {
 
                         for (UpdateSpawnerPayload.MobConfig mob : payload.mobs()) {
                             String entityId = ensureNamespace(mob.entityId().trim());
-                            if (entityId.isEmpty()) continue;
+                            if (entityId.isEmpty() || !BuiltInRegistries.ENTITY_TYPE.containsKey(ResourceLocation.parse(entityId))) {
+                                entityId = "minecraft:breeze";
+                            }
 
                             StringBuilder nbt = new StringBuilder();
                             nbt.append(String.format("id:\"%s\"", entityId));
 
-                            // Сборка HandItems: [mainhand, offhand]
-                            String mh = fixItem(mob.mainhand());
-                            String oh = fixItem(mob.offhand());
-                            if (!mh.isEmpty() || !oh.isEmpty()) {
-                                nbt.append(String.format(",HandItems:[%s,%s]",
-                                        mh.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", mh),
-                                        oh.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", oh)
-                                ));
-                            }
+                            // Сборка экипировки
+                            assembleGear(nbt, mob);
 
-                            // Сборка ArmorItems: [feet, legs, chest, head]
-                            String boots = fixItem(mob.boots());
-                            String legs = fixItem(mob.leggings());
-                            String chest = fixItem(mob.chestplate());
-                            String helm = fixItem(mob.helmet());
-                            if (!boots.isEmpty() || !legs.isEmpty() || !chest.isEmpty() || !helm.isEmpty()) {
-                                nbt.append(String.format(",ArmorItems:[%s,%s,%s,%s]",
-                                        boots.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", boots),
-                                        legs.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", legs),
-                                        chest.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", chest),
-                                        helm.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", helm)
-                                ));
-                            }
+                            // Сборка Эффектов
+                            assembleEffects(nbt, mob);
 
-                            // Сборка active_effects: "speed:1, strength:2"
-                            if (!mob.effects().trim().isEmpty()) {
-                                StringBuilder effNbt = new StringBuilder();
-                                String[] effs = mob.effects().split(",");
-                                boolean firstEff = true;
-                                for (String effRaw : effs) {
-                                    String eff = effRaw.trim();
-                                    if (eff.isEmpty()) continue;
-                                    String effectId = eff;
-                                    int amp = 0;
-                                    if (eff.contains(":")) {
-                                        String[] parts = eff.split(":");
-                                        effectId = parts[0].trim();
-                                        try { amp = Math.max(0, Integer.parseInt(parts[1].trim()) - 1); } catch (Exception ignored) {}
-                                    }
-                                    if (!firstEff) effNbt.append(",");
-                                    effNbt.append(String.format("{id:\"%s\",amplifier:%db,duration:99999}", ensureNamespace(effectId), amp));
-                                    firstEff = false;
-                                }
-                                if (!effNbt.isEmpty()) {
-                                    nbt.append(String.format(",active_effects:[%s]", effNbt));
-                                }
+                            // Сборка Кастомного Дропа
+                            if (mob.customDrops() != null && !mob.customDrops().trim().isEmpty()) {
+                                String cleanDrop = mob.customDrops().trim().replace("\"", "");
+                                // Отключаем ванильные кости/стрелы на уровне самой сущности
+                                nbt.append(",DeathLootTable:\"minecraft:empty\"");
+                                // Записываем кастомный лут во все совместимые теги
+                                nbt.append(String.format(",vibe_drops:\"%s\",NeoForgeData:{vibe_drops:\"%s\"}", cleanDrop, cleanDrop));
                             }
 
                             String fullEntityTag = "{" + nbt + "}";
@@ -115,14 +89,65 @@ public class NetworkHandler {
         );
     }
 
+    private static void assembleGear(StringBuilder nbt, UpdateSpawnerPayload.MobConfig mob) {
+        String mh = fixItem(mob.mainhand());
+        String oh = fixItem(mob.offhand());
+        if (!mh.isEmpty() || !oh.isEmpty()) {
+            nbt.append(String.format(",HandItems:[%s,%s]",
+                    mh.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", mh),
+                    oh.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", oh)
+            ));
+            float mhC = Math.max(0f, Math.min(1f, mob.mainDropChance() / 100f));
+            float ohC = Math.max(0f, Math.min(1f, mob.offDropChance() / 100f));
+            nbt.append(String.format(Locale.ROOT, ",HandDropChances:[%.2ff,%.2ff]", mhC, ohC));
+        }
+        String boots = fixItem(mob.boots());
+        String legs = fixItem(mob.leggings());
+        String chest = fixItem(mob.chestplate());
+        String helm = fixItem(mob.helmet());
+        if (!boots.isEmpty() || !legs.isEmpty() || !chest.isEmpty() || !helm.isEmpty()) {
+            nbt.append(String.format(",ArmorItems:[%s,%s,%s,%s]",
+                    boots.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", boots),
+                    legs.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", legs),
+                    chest.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", chest),
+                    helm.isEmpty() ? "{}" : String.format("{id:\"%s\",count:1}", helm)
+            ));
+            float bC = Math.max(0f, Math.min(1f, mob.bootsDropChance() / 100f));
+            float lC = Math.max(0f, Math.min(1f, mob.legsDropChance() / 100f));
+            float cC = Math.max(0f, Math.min(1f, mob.chestDropChance() / 100f));
+            float hC = Math.max(0f, Math.min(1f, mob.helmDropChance() / 100f));
+            nbt.append(String.format(Locale.ROOT, ",ArmorDropChances:[%.2ff,%.2ff,%.2ff,%.2ff]", bC, lC, cC, hC));
+        }
+    }
+
+    private static void assembleEffects(StringBuilder nbt, UpdateSpawnerPayload.MobConfig mob) {
+        if (!mob.effects().trim().isEmpty()) {
+            StringBuilder effNbt = new StringBuilder();
+            boolean firstEff = true;
+            for (String effRaw : mob.effects().split(",")) {
+                String eff = effRaw.trim();
+                if (eff.isEmpty()) continue;
+                String id = eff;
+                int amp = 0;
+                if (eff.contains(":")) {
+                    String[] parts = eff.split(":");
+                    id = parts[0].trim();
+                    try { amp = Math.max(0, Integer.parseInt(parts[1].trim()) - 1); } catch (Exception ignored) {}
+                }
+                if (!firstEff) effNbt.append(",");
+                effNbt.append(String.format("{id:\"%s\",amplifier:%db,duration:99999,show_particles:0b}", ensureNamespace(id), amp));
+                firstEff = false;
+            }
+            if (!effNbt.isEmpty()) nbt.append(String.format(",active_effects:[%s]", effNbt));
+        }
+    }
+
     private static String ensureNamespace(String id) {
         if (id.isEmpty()) return "";
         return id.contains(":") ? id : "minecraft:" + id;
     }
 
     private static String fixItem(String id) {
-        String trimmed = id.trim();
-        if (trimmed.isEmpty()) return "";
-        return ensureNamespace(trimmed);
+        return ensureNamespace(id.trim());
     }
 }
